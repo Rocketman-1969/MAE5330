@@ -1,0 +1,85 @@
+lear# MATLAB files & directories
+*.asv
+*.autosave
+*.mex*
+*.slxc
+slprj/
+sccprj/
+*.slx.r2*
+
+# LabVIEW files
+*.lvlps
+
+# LaTeX files
+*.toc
+*.log
+*.aux
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.out
+*.fls
+.texpadtmp/
+*.synctex.gz
+
+# latexmk files
+*.fdb_latexmk
+
+# macos files & directories
+.DS_Store
+__MACOSX/
+
+# Microsoft Office
+~$*
+
+# Dropbox files
+.dropbox
+
+# Generic files (swap, etc.)
+*~
+.#*
+*.zip
+
+# Python files & directories
+*.pyc
+*.ipynb_checkpoints/
+__pycache__/
+.vscode
+mavsim_python/mav_venv/
+mavsim_python/mav_3_10/
+mavsim_python/mav_sim/mav_sim.egg-info/
+mavsim_python/mav_sim.egg-info/
+mavsim_python/model_coef.py
+mavsim_python/usu_assignments/tmp.png
+mavsim_python/mav_sim/unit_tests/*.pkl
+
+# compiled and helper directories
+build/
+devel/
+
+# subversion directories
+.svn/
+
+# LaTeX generated, production files
+controlbook.pdf
+controlbook-Amazon-July-2019.pdf
+whirlybird_manual.pdf
+whirlybird_manual_keep.pdf
+whirlybird_manual_orig.pdf
+solution_manual.pdf
+
+
+
+# =====================================
+
+# for any JetBrains IDE:
+.idea/
+
+# CMake
+cmake-build-*/
+*.pyc
+mavsim_python/.DS_Store
+
+mav_venv/
