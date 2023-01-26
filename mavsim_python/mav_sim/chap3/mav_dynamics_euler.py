@@ -170,28 +170,21 @@ def derivatives_euler(state: types.DynamicStateEuler, forces_moments: types.Forc
     """
     st=DynamicStateEuler(state)
     fm=ForceMoments(forces_moments)
-    def s (angle):
-        s=np.sin(angle)
-        return s
-    def c (angle):
-        c=np.cos(angle)
-        return c
-    def t (angle):
-        t=np.tan(angle)
-        return t
+    ned=Euler2Rotation(st.phi, st.theta, st.psi)@np.array([[st.u],[st.v],[st.w]])
+
     # collect the derivative of the states
     x_dot = np.empty( (IND_EULER.NUM_STATES,1) )
-    x_dot[IND_EULER.NORTH] = st.u*c(st.theta)*c(st.psi)+st.v*(s(st.phi)*s(st.theta)*c(st.psi)-c(st.phi)*s(st.psi))+st.w*(c(st.phi)*s(st.theta)*c(st.psi)+s(st.phi)*s(st.psi))
-    x_dot[IND_EULER.EAST] = st.u*c(st.theta)*s(st.psi)+st.v*(s(st.phi)*s(st.theta)*c(st.phi)+c(st.phi)*c(st.psi))
-    x_dot[IND_EULER.DOWN] = st.u*-s(st.theta)+st.v*s(st.phi)*c(st.theta)+st.w*c(st.phi)*c(st.theta)
+    x_dot[IND_EULER.NORTH] =ned[0,0]
+    x_dot[IND_EULER.EAST] = ned[1,0]
+    x_dot[IND_EULER.DOWN] = ned[2,0]
     x_dot[IND_EULER.U] = st.r*st.v-st.q*st.w+(1/MAV.mass)*fm.fx
     x_dot[IND_EULER.V] = st.p*st.w-st.r*st.u+(1/MAV.mass)*fm.fy
     x_dot[IND_EULER.W] = st.q*st.u-st.p*st.v+(1/MAV.mass)*fm.fz
-    x_dot[IND_EULER.PHI] = st.p+st.q*s(st.phi)*t(st.theta)+st.r*c(st.phi)*t(st.theta)
-    x_dot[IND_EULER.THETA] = st.q*c(st.phi)+st.r*-s(st.phi)
-    x_dot[IND_EULER.PSI] = st.q*s(st.phi)/c(st.theta)+st.r*c(st.phi)/c(st.theta)
+    x_dot[IND_EULER.PHI] = st.p+st.q*np.sin(st.phi)*np.tan(st.theta)+st.r*np.cos(st.phi)*np.tan(st.theta)
+    x_dot[IND_EULER.THETA] = st.q*np.cos(st.phi)-st.r*np.sin(st.phi)
+    x_dot[IND_EULER.PSI] = st.q*np.sin(st.phi)/np.cos(st.theta)+st.r*np.cos(st.phi)/np.cos(st.theta)
     x_dot[IND_EULER.P] = MAV.gamma1*st.p*st.q-MAV.gamma2*st.q*st.r+MAV.gamma3*fm.l+MAV.gamma4*fm.n
-    x_dot[IND_EULER.Q] = MAV.gamma5*st.p*st.r-MAV.gamma6*(st.p**2-st.r**2)+MAV.Jy*fm.m
+    x_dot[IND_EULER.Q] = MAV.gamma5*st.p*st.r-MAV.gamma6*(st.p**2-st.r**2)+1/MAV.Jy*fm.m
     x_dot[IND_EULER.R] = MAV.gamma7*st.p*st.q-MAV.gamma1*st.q*st.r+MAV.gamma4*fm.l+MAV.gamma8*fm.n
 
     return x_dot

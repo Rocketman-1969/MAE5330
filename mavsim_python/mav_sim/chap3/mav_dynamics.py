@@ -293,12 +293,13 @@ def derivatives(state: types.DynamicState, forces_moments: types.ForceMoment) ->
     """
     st=DynamicState(state)
     fm=ForceMoments(forces_moments)
+    ned=Quaternion2Rotation(np.array([[st.e0],[st.e1],[st.e2],[st.e3]]))@np.array([[st.u],[st.v],[st.w]])
     
     # collect the derivative of the states
     x_dot = np.empty( (IND.NUM_STATES,1) )
-    x_dot[IND.NORTH] = st.u*(st.e1**2+st.e0**2-st.e2**2-st.e3**2)+st.v*(2*(st.e1*st.e2-st.e3*st.e0))+st.w*(2*(st.e1*st.e3+st.e2*st.e0))
-    x_dot[IND.EAST] = st.u*(2*(st.e1*st.e2+st.e3*st.e0))+st.v*(st.e2**2+st.e0**2-st.e1**2-st.e3**2)+st.w*(2*(st.e2*st.e3-st.e1*st.e0))
-    x_dot[IND.DOWN] = st.u*(2*(st.e1*st.e3-st.e2*st.e0))+st.v*(2*(st.e2*st.e3+st.e1*st.e0))+st.w*(st.e3**2+st.e0**2-st.e1**2-st.e2**2)
+    x_dot[IND.NORTH] = ned[0,0]
+    x_dot[IND.EAST] = ned[1,0]
+    x_dot[IND.DOWN] = ned[2,0]
     x_dot[IND.U] = st.r*st.v-st.q*st.w+(1/MAV.mass)*fm.fx
     x_dot[IND.V] = st.p*st.w-st.r*st.u+(1/MAV.mass)*fm.fy
     x_dot[IND.W] = st.q*st.u-st.p*st.v+(1/MAV.mass)*fm.fz
@@ -306,8 +307,8 @@ def derivatives(state: types.DynamicState, forces_moments: types.ForceMoment) ->
     x_dot[IND.E1] = .5*(st.e0*st.p+0*st.e1+st.e2*st.r+st.e3*-st.q)
     x_dot[IND.E2] = .5*(st.e0*st.q+st.e1*-st.r+st.e2*0+st.e3*st.p)
     x_dot[IND.E3] = .5*(st.e0*st.r+st.e1*st.q+st.e2*-st.p+st.e3*0)
-    x_dot[IND.P] = MAV.gamma1*st.p*st.q-MAV.gamma2*st.q*st.r+MAV.gamma3*fm.l+MAV.gamma4*fm.n
-    x_dot[IND.Q] = MAV.gamma5*st.p*st.r-MAV.gamma6*(st.p**2-st.r**2)+MAV.Jy*fm.m
-    x_dot[IND.R] = MAV.gamma7*st.p*st.q-MAV.gamma1*st.q*st.r+MAV.gamma4*fm.l+MAV.gamma8*fm.n
+    x_dot[IND.P] = (MAV.gamma1*st.p*st.q)-(MAV.gamma2*st.q*st.r)+(MAV.gamma3*fm.l)+(MAV.gamma4*fm.n)
+    x_dot[IND.Q] = (MAV.gamma5*st.p*st.r)-(MAV.gamma6*(st.p**2-st.r**2))+(1/MAV.Jy*fm.m)
+    x_dot[IND.R] = (MAV.gamma7*st.p*st.q)-(MAV.gamma1*st.q*st.r)+(MAV.gamma4*fm.l)+(MAV.gamma8*fm.n)
 
     return x_dot
