@@ -191,7 +191,7 @@ def derivatives_euler(state: types.DynamicStateEuler, forces_moments: types.Forc
     x_dot[IND_EULER.THETA] = st.q*c(st.phi)+st.r*-s(st.phi)
     x_dot[IND_EULER.PSI] = st.q*s(st.phi)/c(st.theta)+st.r*c(st.phi)/c(st.theta)
     x_dot[IND_EULER.P] = MAV.gamma1*st.p*st.q-MAV.gamma2*st.q*st.r+MAV.gamma3*fm.l+MAV.gamma4*fm.n
-    x_dot[IND_EULER.Q] = MAV.gamma5*st.p*st.r-MAV.gamma6*(st.p^2-st.r^2)+MAV.Jy*fm.m
+    x_dot[IND_EULER.Q] = MAV.gamma5*st.p*st.r-MAV.gamma6*(st.p**2-st.r**2)+MAV.Jy*fm.m
     x_dot[IND_EULER.R] = MAV.gamma7*st.p*st.q-MAV.gamma1*st.q*st.r+MAV.gamma4*fm.l+MAV.gamma8*fm.n
 
     return x_dot
