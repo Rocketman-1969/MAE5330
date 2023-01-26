@@ -6,9 +6,7 @@ mavSimPy
         12/2021 - GND
 """
 
-import sys
-
-from numpy import True_  # Used for exit
+import sys  # Used for exit
 
 import mav_sim.parameters.simulation_parameters as SIM  # parameters
 from mav_sim.chap2.mav_viewer import MavViewer  # Viewer for MAV

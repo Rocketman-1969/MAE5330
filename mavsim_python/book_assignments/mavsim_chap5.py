@@ -11,6 +11,7 @@ from mav_sim.chap3.mav_dynamics import DynamicState
 from mav_sim.chap4.run_sim import run_sim
 from mav_sim.chap5.compute_models import compute_ss_model
 from mav_sim.chap5.trim import compute_trim
+from mav_sim.message_types.msg_delta import MsgDelta
 from mav_sim.message_types.msg_sim_params import MsgSimParams
 
 
@@ -32,7 +33,8 @@ def main() -> None:
     print(A_lon, B_lon, A_lat, B_lat)
 
     # Create a function for perturbing the trim input
-    delta_fnc = lambda _: trim_input
+    def delta_fnc(_: float) -> MsgDelta:
+        return trim_input
 
     # Run the simulation - Note that while not used, the viewer objects
     # need to remain active to keep the windows open

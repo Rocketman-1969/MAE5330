@@ -1,5 +1,5 @@
 """ch3_derivatives_tests.py: Implements some basic tests for the dirivatives funciton."""
-#slfj
+
 import os
 import pickle
 
