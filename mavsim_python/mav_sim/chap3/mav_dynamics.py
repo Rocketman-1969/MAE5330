@@ -11,7 +11,6 @@ part of mavsimPy
         12/21 - GND
 """
 from typing import Optional, cast
-from typing_extensions import Self
 
 import mav_sim.parameters.aerosonde_parameters as MAV
 import numpy as np

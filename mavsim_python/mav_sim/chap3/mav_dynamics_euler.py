@@ -13,7 +13,7 @@ part of mavsimPy
 """
 import mav_sim.parameters.aerosonde_parameters as MAV
 import numpy as np
-from mav_sim.chap3.mav_dynamics import IND, DynamicState, ForceMoments
+from mav_sim.chap3.mav_dynamics import IND, ForceMoments
 from mav_sim.tools import types
 from mav_sim.tools.rotations import Euler2Quaternion, Euler2Rotation, Quaternion2Euler
 
