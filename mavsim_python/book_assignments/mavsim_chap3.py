@@ -17,7 +17,7 @@ def main() -> None:
     """Provide a test scenario
     """
     # Initialize the simulation parameters
-    sim_params = MsgSimParams(end_time=100., video_name="chap3.avi") # Sim ending in 10 seconds
+    sim_params = MsgSimParams(end_time=100., write_video=True, video_name="chap3.avi") # Sim ending in 10 seconds
     state = DynamicState(state=np.zeros([13,1]))
     state.down = -5.
     state.u = 1
