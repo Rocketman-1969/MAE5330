@@ -42,7 +42,7 @@ python .\book_assignments\mavsim_chap[num].py
 
 For example, chapter 12's code can be run with the command
 ```
-python .\book_assignments\mavsim_chap12.py
+python -m pylint --jobs 0 --rcfile .pylintrc mav_sim/ book_assignments/
 ```
 
 # Code Compliance

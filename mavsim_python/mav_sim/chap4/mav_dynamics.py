@@ -189,7 +189,7 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
         Forces and Moments on the UAV (in body frame) np.matrix(fx, fy, fz, Mx, My, Mz)
     """
     # Extract elements
-    fx = 0.
+    fx = .5*Va**2
     fz = 0.
     fy =0.
     Mx = 0.
