@@ -188,10 +188,51 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
     Returns:
         Forces and Moments on the UAV (in body frame) np.matrix(fx, fy, fz, Mx, My, Mz)
     """
+    def CL(alpha):
+        CL=MAV.C_L_0+MAV.C_L_alpha*alpha
+        return CL
+    
+    def CD(alpha):
+        CD=MAV.C_D_0+MAV.C_D_alpha*alpha
+        return CD
+
+    def Cx(alpha):
+        Cx=-CD(alpha)*np.cos(alpha)+CL(alpha)*np.sin(alpha)
+        return Cx
+
+    def Cx_q(alpha):
+        Cx_q=-MAV.C_D_q*np.cos(alpha)+MAV.C_L_q*np.sin(alpha)
+        return Cx_q
+    
+    def Cx_de(alpha):
+        Cx_de=-MAV.C_D_delta_e*np.cos(alpha)+MAV.C_L_delta_e*np.sin(alpha)
+        return Cx_de
+
+    def Cz(alpha):
+        Cz=-CD(alpha)*np.sin(alpha)-CL(alpha)*np.cos(alpha)
+        return Cz
+    
+    def Cz_q(alpha):
+        Cz_q=-MAV.C_D_q*np.sin(alpha)-MAV.C_L_q*np.cos(alpha)
+        return Cz_q
+    
+    def Cz_de(alpha):
+        Cz_de=-MAV.C_D_delta_e*np.sin(alpha)-MAV.C_L_delta_e*np.cos(alpha)
+        return Cz_de
+
+    st=DynamicState(state)
+
     # Extract elements
-    fx = .5*Va**2
-    fz = 0.
-    fy =0.
+    fx = (MAV.mass*MAV.gravity*(2(st.e1*st.e3-st.e2*st.e0)))\
+        +.5*MAV.rho*Va^2*MAV.S_wing*(Cx(alpha)+Cx_q(alpha)\
+            *(MAV.c/(2*Va))*st.q)*(Cx_de(alpha)*delta.elevator)
+    fy = (MAV.mass*MAV.gravity*(st.e3**2+st.e0**2-st.e1**2-st.e2**2))\
+        +.5*MAV.rho*Va^2*MAV.S_wing*(MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p\
+            *(MAV.b/(2*Va))*st.p+MAV.C_Y_r*(MAV.b/(2*Va))*st.r)\
+                *(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder)
+    fz = (MAV.mass*MAV.gravity*(2(st.e2*st.e3+st.e1*st.e0)))\
+        +.5*MAV.rho*Va^2*MAV.S_wing*(Cz(alpha)+Cz_q(alpha)*(MAV.c/(2*Va))*st.q)\
+            *(Cz_de(alpha)*delta.elevator)
     Mx = 0.
     My = 0.
     Mz = 0.
