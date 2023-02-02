@@ -222,18 +222,20 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
 
     st=DynamicState(state)
 
+    TP,QP=motor_thrust_torque(Va,delta.throttle)
+
     # Extract elements
     fx = (MAV.mass*MAV.gravity*(2(st.e1*st.e3-st.e2*st.e0)))\
-        +.5*MAV.rho*Va^2*MAV.S_wing*(Cx(alpha)+Cx_q(alpha)\
-            *(MAV.c/(2*Va))*st.q)*(Cx_de(alpha)*delta.elevator)
+        +.5*MAV.rho*Va**2*MAV.S_wing*(Cx(alpha)+Cx_q(alpha)\
+            *(MAV.c/(2*Va))*st.q)*(Cx_de(alpha)*delta.elevator)+TP
     fy = (MAV.mass*MAV.gravity*(st.e3**2+st.e0**2-st.e1**2-st.e2**2))\
-        +.5*MAV.rho*Va^2*MAV.S_wing*(MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p\
+        +.5*MAV.rho*Va**2*MAV.S_wing*(MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p\
             *(MAV.b/(2*Va))*st.p+MAV.C_Y_r*(MAV.b/(2*Va))*st.r)\
                 *(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder)
     fz = (MAV.mass*MAV.gravity*(2(st.e2*st.e3+st.e1*st.e0)))\
-        +.5*MAV.rho*Va^2*MAV.S_wing*(Cz(alpha)+Cz_q(alpha)*(MAV.c/(2*Va))*st.q)\
+        +.5*MAV.rho*Va**2*MAV.S_wing*(Cz(alpha)+Cz_q(alpha)*(MAV.c/(2*Va))*st.q)\
             *(Cz_de(alpha)*delta.elevator)
-    Mx = 0.
+    Mx = .5*MAV.rho*Va**2*MAV.S_wing*(MAV.b(MAV.C_ell_0+MAV.C_ell_beta*beta+MAV.C_ell_p*(MAV.b/(2*Va))*st.p))
     My = 0.
     Mz = 0.
 
