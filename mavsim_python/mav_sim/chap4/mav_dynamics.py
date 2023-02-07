@@ -9,6 +9,7 @@ part of mavPySim
         12/20/2018 - RWB
 """
 from typing import Optional, cast
+#from webbrowser import MacOSX
 
 import mav_sim.parameters.aerosonde_parameters as MAV
 import numpy as np
@@ -188,58 +189,38 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
     Returns:
         Forces and Moments on the UAV (in body frame) np.matrix(fx, fy, fz, Mx, My, Mz)
     """
-    def CL(alpha):
-        CL=MAV.C_L_0+MAV.C_L_alpha*alpha
-        return CL
+    sigma=(1+np.exp(-MAV.M*(alpha-MAV.alpha0))+np.exp(MAV.M*(alpha+MAV.alpha0)))/((1+np.exp(-MAV.M*(alpha-MAV.alpha0)))*(1+np.exp(MAV.M*(alpha+MAV.alpha0))))
     
-    def CD(alpha):
-        CD=MAV.C_D_0+MAV.C_D_alpha*alpha
-        return CD
-
-    def Cx(alpha):
-        Cx=-CD(alpha)*np.cos(alpha)+CL(alpha)*np.sin(alpha)
-        return Cx
-
-    def Cx_q(alpha):
-        Cx_q=-MAV.C_D_q*np.cos(alpha)+MAV.C_L_q*np.sin(alpha)
-        return Cx_q
+    CL=(1-sigma)*(MAV.C_L_0+MAV.C_L_alpha*alpha)+sigma*(2*np.sign(alpha)*(np.sin(alpha))**2*np.cos(alpha))
     
-    def Cx_de(alpha):
-        Cx_de=-MAV.C_D_delta_e*np.cos(alpha)+MAV.C_L_delta_e*np.sin(alpha)
-        return Cx_de
-
-    def Cz(alpha):
-        Cz=-CD(alpha)*np.sin(alpha)-CL(alpha)*np.cos(alpha)
-        return Cz
+    CD=MAV.C_D_p+(((MAV.C_L_0+MAV.C_L_alpha*alpha)**2)/(np.pi*MAV.e*MAV.AR))
     
-    def Cz_q(alpha):
-        Cz_q=-MAV.C_D_q*np.sin(alpha)-MAV.C_L_q*np.cos(alpha)
-        return Cz_q
+    Cx=-CD*np.cos(alpha)+CL*np.sin(alpha)
     
-    def Cz_de(alpha):
-        Cz_de=-MAV.C_D_delta_e*np.sin(alpha)-MAV.C_L_delta_e*np.cos(alpha)
-        return Cz_de
+    Cx_q=-MAV.C_D_q*np.cos(alpha)+MAV.C_L_q*np.sin(alpha)
+    
+    Cx_de=-MAV.C_D_delta_e*np.cos(alpha)+MAV.C_L_delta_e*np.sin(alpha)
+    
+    Cz=-CD*np.sin(alpha)-CL*np.cos(alpha)
+    
+    Cz_q=-MAV.C_D_q*np.sin(alpha)-MAV.C_L_q*np.cos(alpha)
+    
+    Cz_de=-MAV.C_D_delta_e*np.sin(alpha)-MAV.C_L_delta_e*np.cos(alpha)
 
     st=DynamicState(state)
 
-    TP,QP=motor_thrust_torque(Va,delta.throttle)
+    [TP,QP]=motor_thrust_torque(Va,delta.throttle)
+
+    [phi,theta,_]=Quaternion2Euler(state[IND.QUAT])
 
     # Extract elements
-    fx = (MAV.mass*MAV.gravity*(2(st.e1*st.e3-st.e2*st.e0)))\
-        +.5*MAV.rho*Va**2*MAV.S_wing*(Cx(alpha)+Cx_q(alpha)\
-            *(MAV.c/(2*Va))*st.q)*(Cx_de(alpha)*delta.elevator)+TP
-    fy = (MAV.mass*MAV.gravity*(st.e3**2+st.e0**2-st.e1**2-st.e2**2))\
-        +.5*MAV.rho*Va**2*MAV.S_wing*(MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p\
-            *(MAV.b/(2*Va))*st.p+MAV.C_Y_r*(MAV.b/(2*Va))*st.r)\
-                *(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder)
-    fz = (MAV.mass*MAV.gravity*(2(st.e2*st.e3+st.e1*st.e0)))\
-        +.5*MAV.rho*Va**2*MAV.S_wing*(Cz(alpha)+Cz_q(alpha)*(MAV.c/(2*Va))*st.q)\
-            *(Cz_de(alpha)*delta.elevator)
-    Mx = .5*MAV.rho*Va**2*MAV.S_wing*(MAV.b(MAV.C_ell_0+MAV.C_ell_beta*beta+MAV.C_ell_p*(MAV.b/(2*Va))*st.p))
-    My = 0.
-    Mz = 0.
+    fx = (-MAV.mass*MAV.gravity*(np.sin(theta)))+.5*MAV.rho*Va**2*MAV.S_wing*(Cx+Cx_q*(MAV.c/(2*Va)*st.q)+(Cx_de*delta.elevator))+TP
+    fy = (MAV.mass*MAV.gravity*(np.cos(theta)*np.sin(phi)))+.5*MAV.rho*Va**2*MAV.S_wing*((MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p*(MAV.b/(2*Va))*st.p+MAV.C_Y_r*(MAV.b/(2*Va))*st.r)+(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder))
+    fz = (MAV.mass*MAV.gravity*(np.cos(theta)*np.cos(phi)))+.5*MAV.rho*Va**2*MAV.S_wing*(Cz+Cz_q*(MAV.c/(2*Va))*st.q+Cz_de*delta.elevator)
+    Mx = .5*MAV.rho*Va**2*MAV.S_wing*(MAV.b*(MAV.C_ell_0+MAV.C_ell_beta*beta+MAV.C_ell_p*(MAV.b/(2*Va))*st.p+MAV.C_ell_r*(MAV.b/(2*Va))*st.r)+(MAV.b*(MAV.C_ell_delta_a*delta.aileron+MAV.C_ell_delta_r*delta.rudder)))-QP
+    My = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.c*(MAV.C_m_0+MAV.C_m_alpha*alpha+MAV.C_m_q*(MAV.c/(2*Va))*st.q))+(MAV.c*MAV.C_m_delta_e*delta.elevator))
+    Mz = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.b*(MAV.C_n_0+MAV.C_n_beta*beta+MAV.C_n_p*(MAV.b/(2*Va))*st.p+MAV.C_n_r*(MAV.b/(2*Va))*st.r))+(MAV.b*(MAV.C_n_delta_a*delta.aileron+MAV.C_n_delta_r*delta.rudder)))
 
-    print('mav_dynamics::forces_moments() Needs to be implemented')
     return types.ForceMoment( np.array([[fx, fy, fz, Mx, My, Mz]]).T )
 
 def motor_thrust_torque(Va: float, delta_t: float) -> tuple[float, float]:
@@ -253,10 +234,24 @@ def motor_thrust_torque(Va: float, delta_t: float) -> tuple[float, float]:
         T_p: Propeller thrust
         Q_p: Propeller torque
     """
+    a=(MAV.rho*MAV.D_prop**5)/((2*np.pi)**2)*MAV.C_Q0
+
+    b=((MAV.rho*MAV.D_prop**4)/(2*np.pi))*MAV.C_Q1*Va+((MAV.KQ*30/np.pi)/(MAV.KV*MAV.R_motor))
+
+    c=MAV.rho*MAV.D_prop**3*MAV.C_Q2*Va**2-((MAV.KQ*MAV.V_max*delta_t)/MAV.R_motor)+MAV.KQ*MAV.i0
+
+    Omega_p=(-b+np.sqrt(b**2-4*a*c))/(2*a)
+
+    J=(2*np.pi*Va)/(Omega_p*MAV.D_prop)
+
+    CT=MAV.C_T2*J**2+MAV.C_T1*J+MAV.C_T0
+
+    CQ=MAV.C_Q2*J**2+MAV.C_Q1*J+MAV.C_Q0
+
     # thrust and torque due to propeller
-    thrust_prop = 0.
-    torque_prop = 0.
-    print('mav_dynamics::motor_thrust_torque() Needs to be implemented')
+    thrust_prop = ((MAV.rho*MAV.D_prop**4)/(4*np.pi**2))*Omega_p**2*CT
+    torque_prop = ((MAV.rho*MAV.D_prop**5)/(4*np.pi**2))*Omega_p**2*CQ
+    
     return thrust_prop, torque_prop
 
 def update_velocity_data(state: types.DynamicState, \
@@ -282,15 +277,18 @@ def update_velocity_data(state: types.DynamicState, \
     wind_body_frame += gust  # add the gust
     wind_inertial_frame = R @ wind_body_frame # Wind in the world frame
 
+    uvw=state[IND.VEL]
+   
+    Va_vec=uvw-wind_body_frame
+
     # compute airspeed
-    Va = 50.
+    Va = np.sqrt(Va_vec[0,0]**2+Va_vec[1,0]**2+Va_vec[2,0]**2)
 
     # compute angle of attack
-    alpha = 0.
+    alpha = np.arctan2(Va_vec[2,0],Va_vec[0,0])
 
     # compute sideslip angle
-    beta = 0.
+    beta = np.arctan2(Va_vec[1,0],np.sqrt(Va_vec[0,0]**2+Va_vec[2,0]**2))
 
     # Return computed values
-    print('mav_dynamics::update_velocity_data() Needs to be implemented')
     return (Va, alpha, beta, wind_inertial_frame)
