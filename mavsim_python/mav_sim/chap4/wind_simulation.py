@@ -42,15 +42,24 @@ class WindSimulation:
             sigma_u = 0.0
             sigma_v = 0.0
             sigma_w = 0.0
-        print("WindSimulation::__init__() Need to implement")
-        self.u_w = TransferFunction(num=np.array([[0]]),
-                                     den=np.array([[1,1]]),
+    
+        a1 = sigma_u*np.sqrt(2.*Va/(np.pi*Lu))
+        b1 = Va/Lu
+        a2 = sigma_v*np.sqrt(3.*Va/(np.pi*Lv))
+        b2 = Va/Lv
+        c2 = (Va/(np.sqrt(3.)*Lv))
+        a3 = sigma_w*np.sqrt(3.*Va/(np.pi*Lw))
+        b3 = Va/Lw
+        c3 = (Va/(np.sqrt(3.)*Lw))
+
+        self.u_w = TransferFunction(num=np.array([[a1]]),
+                                    den=np.array([[1, b1]]),
+                                    Ts=Ts)
+        self.v_w = TransferFunction(num=np.array([[a2,a2*c2]]),
+                                     den=np.array([[1,2*b2,b2**2]]),
                                      Ts=Ts)
-        self.v_w = TransferFunction(num=np.array([[0]]),
-                                     den=np.array([[1,1]]),
-                                     Ts=Ts)
-        self.w_w = TransferFunction(num=np.array([[0]]),
-                                     den=np.array([[1,1]]),
+        self.w_w = TransferFunction(num=np.array([[a3,a3*c3]]),
+                                     den=np.array([[1,2*b3,b3**2]]),
                                      Ts=Ts)
         self._Ts = Ts
 

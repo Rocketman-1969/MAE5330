@@ -9,7 +9,6 @@ part of mavPySim
         12/20/2018 - RWB
 """
 from typing import Optional, cast
-#from webbrowser import MacOSX
 
 import mav_sim.parameters.aerosonde_parameters as MAV
 import numpy as np
@@ -22,6 +21,11 @@ from mav_sim.message_types.msg_delta import MsgDelta
 from mav_sim.message_types.msg_state import MsgState
 from mav_sim.tools import types
 from mav_sim.tools.rotations import Quaternion2Euler, Quaternion2Rotation
+
+#from webbrowser import MacOSX
+
+
+
 
 
 class MavDynamics:
@@ -189,7 +193,9 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
     Returns:
         Forces and Moments on the UAV (in body frame) np.matrix(fx, fy, fz, Mx, My, Mz)
     """
-    sigma=(1+np.exp(-MAV.M*(alpha-MAV.alpha0))+np.exp(MAV.M*(alpha+MAV.alpha0)))/((1+np.exp(-MAV.M*(alpha-MAV.alpha0)))*(1+np.exp(MAV.M*(alpha+MAV.alpha0))))
+    sigma=(1+np.exp(-MAV.M*(alpha-MAV.alpha0))\
+        +np.exp(MAV.M*(alpha+MAV.alpha0)))\
+        /((1+np.exp(-MAV.M*(alpha-MAV.alpha0)))*(1+np.exp(MAV.M*(alpha+MAV.alpha0))))
     
     CL=(1-sigma)*(MAV.C_L_0+MAV.C_L_alpha*alpha)+sigma*(2*np.sign(alpha)*(np.sin(alpha))**2*np.cos(alpha))
     
@@ -214,12 +220,30 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
     [phi,theta,_]=Quaternion2Euler(state[IND.QUAT])
 
     # Extract elements
-    fx = (-MAV.mass*MAV.gravity*(np.sin(theta)))+.5*MAV.rho*Va**2*MAV.S_wing*(Cx+Cx_q*(MAV.c/(2*Va)*st.q)+(Cx_de*delta.elevator))+TP
-    fy = (MAV.mass*MAV.gravity*(np.cos(theta)*np.sin(phi)))+.5*MAV.rho*Va**2*MAV.S_wing*((MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p*(MAV.b/(2*Va))*st.p+MAV.C_Y_r*(MAV.b/(2*Va))*st.r)+(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder))
-    fz = (MAV.mass*MAV.gravity*(np.cos(theta)*np.cos(phi)))+.5*MAV.rho*Va**2*MAV.S_wing*(Cz+Cz_q*(MAV.c/(2*Va))*st.q+Cz_de*delta.elevator)
-    Mx = .5*MAV.rho*Va**2*MAV.S_wing*(MAV.b*(MAV.C_ell_0+MAV.C_ell_beta*beta+MAV.C_ell_p*(MAV.b/(2*Va))*st.p+MAV.C_ell_r*(MAV.b/(2*Va))*st.r)+(MAV.b*(MAV.C_ell_delta_a*delta.aileron+MAV.C_ell_delta_r*delta.rudder)))-QP
-    My = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.c*(MAV.C_m_0+MAV.C_m_alpha*alpha+MAV.C_m_q*(MAV.c/(2*Va))*st.q))+(MAV.c*MAV.C_m_delta_e*delta.elevator))
-    Mz = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.b*(MAV.C_n_0+MAV.C_n_beta*beta+MAV.C_n_p*(MAV.b/(2*Va))*st.p+MAV.C_n_r*(MAV.b/(2*Va))*st.r))+(MAV.b*(MAV.C_n_delta_a*delta.aileron+MAV.C_n_delta_r*delta.rudder)))
+    if Va != 0:
+        fx = (-MAV.mass*MAV.gravity*(np.sin(theta)))\
+            +.5*MAV.rho*Va**2*MAV.S_wing*\
+            (Cx+Cx_q*(MAV.c/(2*Va)*st.q)+(Cx_de*delta.elevator))+TP
+        fy = (MAV.mass*MAV.gravity*(np.cos(theta)*np.sin(phi)))+.5*MAV.rho*Va**2*MAV.S_wing*\
+            ((MAV.C_Y_0+MAV.C_Y_beta*beta+MAV.C_Y_p*(MAV.b/(2*Va))*st.p+MAV.C_Y_r*\
+                (MAV.b/(2*Va))*st.r)+(MAV.C_Y_delta_a*delta.aileron+MAV.C_Y_delta_r*delta.rudder))
+        fz = (MAV.mass*MAV.gravity*(np.cos(theta)*np.cos(phi)))\
+            +.5*MAV.rho*Va**2*MAV.S_wing*(Cz+Cz_q*(MAV.c/(2*Va))*st.q+Cz_de*delta.elevator)
+        Mx = .5*MAV.rho*Va**2*MAV.S_wing*(MAV.b*(MAV.C_ell_0+MAV.C_ell_beta*beta+MAV.C_ell_p\
+            *(MAV.b/(2*Va))*st.p+MAV.C_ell_r*(MAV.b/(2*Va))*st.r)\
+                +(MAV.b*(MAV.C_ell_delta_a*delta.aileron+MAV.C_ell_delta_r*delta.rudder)))-QP
+        My = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.c*(MAV.C_m_0+MAV.C_m_alpha*alpha+MAV.C_m_q\
+            *(MAV.c/(2*Va))*st.q))+(MAV.c*MAV.C_m_delta_e*delta.elevator))
+        Mz = .5*MAV.rho*Va**2*MAV.S_wing*((MAV.b*(MAV.C_n_0+MAV.C_n_beta*beta+MAV.C_n_p*(MAV.b/(2*Va))\
+            *st.p+MAV.C_n_r*(MAV.b/(2*Va))*st.r))+\
+                (MAV.b*(MAV.C_n_delta_a*delta.aileron+MAV.C_n_delta_r*delta.rudder)))
+    else:
+        fx = (-MAV.mass*MAV.gravity*(np.sin(theta)))+TP
+        fy = (MAV.mass*MAV.gravity*(np.cos(theta)*np.sin(phi)))
+        fz = (MAV.mass*MAV.gravity*(np.cos(theta)*np.cos(phi)))
+        Mx = -QP
+        My = 0.
+        Mz = 0.
 
     return types.ForceMoment( np.array([[fx, fy, fz, Mx, My, Mz]]).T )
 
