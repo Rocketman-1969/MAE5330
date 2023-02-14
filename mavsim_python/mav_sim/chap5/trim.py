@@ -5,6 +5,8 @@ compute_trim
         12/29/2018 - RWB
         1/2022 - GND
 """
+from cmath import sqrt
+from sre_constants import IN
 from typing import Any, cast
 
 import numpy as np
@@ -118,7 +120,10 @@ def velocity_constraint(x: types.NP_MAT, Va_desired: float) -> float:
     Returns:
         Va^2 - Va_desired^2
     """
-    return 0.
+    Va=x.item(3)**2+x.item(4)**2+x.item(5)**2
+    J=Va-Va_desired**2
+
+    return J
 
 def velocity_constraint_partial(x: types.NP_MAT) -> list[float]:
     """Defines the partial of the velocity constraint with respect to x
@@ -130,7 +135,9 @@ def velocity_constraint_partial(x: types.NP_MAT) -> list[float]:
     Returns:
         16 element list containing the partial of the constraint wrt x
     """
-    return [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+    VelConPart=[0,0,0,2*x.item(3),2*x.item(4),2*x.item(5),0,0,0,0,0,0,0,0,0,0]
+
+    return VelConPart
 
 def variable_bounds(state0: types.DynamicStateEuler, eps: float) -> tuple[list[float], list[float]]:
     """Define the upper and lower bounds of each the states and inputs as one vector.
@@ -149,21 +156,21 @@ def variable_bounds(state0: types.DynamicStateEuler, eps: float) -> tuple[list[f
         ub: 16 element list defining the upper bound of each variable
     """
     # -lower             pn                 pe                             pd
-    lb = [  state0.item(IND_EULER.NORTH),   0.,                            0.,
-        #      u     v     w        phi       theta          psi
-            -np.inf, 0.,  0.,        0.,    -np.pi/2+.1,     0.,
+    lb = [  state0.item(IND_EULER.NORTH),   state0.item(IND_EULER.EAST),   state0.item(IND_EULER.DOWN),
+        #      u     v     w        phi           theta          psi
+            -np.inf, 0.,  -np.inf,  -np.pi/2,    -np.pi/2+.1,   state0.item(IND_EULER.PSI),
         #   p,  q,     r
-            0., 0.,   0.,
+            0., 0.,   -np.inf,
         #    \delta_e   \delta_a  \delta_r   \delta_t
-            -np.pi/2,     0.,      0.,        0]
+            -np.pi/2,   -np.pi/2, -np.pi/2,   0.]
     # -upper             pn                       pe                             pd
-    ub = [  state0.item(IND_EULER.NORTH)+eps,     0.,                            0.,
+    ub = [  state0.item(IND_EULER.NORTH)+eps,    state0.item(IND_EULER.EAST)+eps, state0.item(IND_EULER.DOWN)+eps,
         #      u     v          w        phi       theta          psi
-             np.inf, 0.,        0.,    0.,       np.pi/2-.1,       0.,
+             np.inf, 0.+eps,    np.inf,  np.pi/2,  np.pi/2-.1,   state0.item(IND_EULER.PSI)+eps,
         #   p,      q,       r
-            0.+eps,  0.,    0.,
+            0.+eps,  0.+eps, np.inf,
         #    \delta_e   \delta_a  \delta_r   \delta_t
-             np.pi/2,      0.,       0.,       0.]
+             np.pi/2,   np.pi/2,  np.pi/2,   1.]
     return lb, ub
 
 def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_weight: float) -> float:
@@ -182,17 +189,34 @@ def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_w
         J: resulting cost of the current parameters
     """
     # Extract the state and input
+    matsetup=np.ones((12,))
+    Q=np.diag(matsetup)
+    Q[0,0]=0
+    Q[1,1]=0
+    Q[8,8]=1e8
     state, delta = extract_state_input(x)
-
     # Calculate the desired trim trajectory dynamics
-
+    XDotStar=np.array(([0],
+                       [0],
+                       [Va*np.sin(gamma)],
+                       [0],
+                       [0],
+                       [0],
+                       [0],
+                       [0],
+                       [Va/R*np.cos(gamma)],
+                       [0],
+                       [0],
+                       [0]))
 
     # Calculate forces
-
+    [VaActual,alpha,beta,_]=update_velocity_data(state,np.zeros((6,1)))
+    fm=forces_moments(euler_state_to_quat_state(state),delta,VaActual,beta,alpha)
     # Calculate the dynamics based upon the current state and input (use euler derivatives)
-
+    XDot=derivatives_euler(state,fm)
     # Calculate the difference between the desired and actual
-
+    Delta=XDotStar-XDot
 
     # Calculate the square of the difference (neglecting pn and pe)
-    return 0.
+    J=np.transpose(Delta)@Q@Delta
+    return J
