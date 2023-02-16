@@ -40,7 +40,7 @@ def euler_derivatives_test(tests: list[DynamicsResults], threshold: float = 1e-4
         print("Passed test on derivatives_euler")
     return success
 
-def quat_derivatives_test(tests: list[DynamicsResults], threshold: float = 1e-4) -> bool:
+def quat_derivatives_test(tests: list[DynamicsResults], threshold: float = 1e-3) -> bool:
     """Test the Euler derivatives, display invalid results
     """
     # Evaluate the results

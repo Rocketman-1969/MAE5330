@@ -191,26 +191,42 @@ def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_w
     # Extract the state and input
     matsetup=np.ones((12,))
     Q=np.diag(matsetup)
-    Q[0,0]=0
-    Q[1,1]=0
-    Q[8,8]=1e8
+    Q[0,0]=0.
+    Q[1,1]=0.
+    Q[8,8]=psi_weight
     state, delta = extract_state_input(x)
     # Calculate the desired trim trajectory dynamics
-    XDotStar=np.array(([0],
-                       [0],
-                       [Va*np.sin(gamma)],
-                       [0],
-                       [0],
-                       [0],
-                       [0],
-                       [0],
-                       [Va/R*np.cos(gamma)],
-                       [0],
-                       [0],
-                       [0]))
+    if R==np.inf:
+       XDotStar=np.array(([0.],
+                       [0.],
+                       [-Va*np.sin(gamma)],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.],
+                       [0.]))
+
+    else:
+        XDotStar=np.array(([0.],
+                        [0.],
+                        [-Va*np.sin(gamma)],
+                        [0.],
+                        [0.],
+                        [0.],
+                        [0.],
+                        [0.],
+                        [Va/R*np.cos(gamma)],
+                        [0.],
+                        [0.],
+                        [0.]))
+
 
     # Calculate forces
-    [VaActual,alpha,beta,_]=update_velocity_data(state,np.zeros((6,1)))
+    [VaActual,alpha,beta,_]=update_velocity_data(euler_state_to_quat_state(state))
     fm=forces_moments(euler_state_to_quat_state(state),delta,VaActual,beta,alpha)
     # Calculate the dynamics based upon the current state and input (use euler derivatives)
     XDot=derivatives_euler(state,fm)
@@ -219,4 +235,4 @@ def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_w
 
     # Calculate the square of the difference (neglecting pn and pe)
     J=np.transpose(Delta)@Q@Delta
-    return J
+    return float(J)
