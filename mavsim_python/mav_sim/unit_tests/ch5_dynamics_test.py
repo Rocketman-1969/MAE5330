@@ -187,7 +187,7 @@ def variable_bounds_test(tests: list[VariableBoundsTest], threshold: float = 1e-
         print("Passed test on variable_bounds")
     return success
 
-def trim_objective_fun_test(tests: list[TrimObjectiveFunTest], threshold: float = 1e0) -> bool:
+def trim_objective_fun_test(tests: list[TrimObjectiveFunTest], threshold: float = 1.) -> bool:
     """Runs the test for the trim_objective_fun"""
     # Evaluate the results
     print("\nStarting trim_objective_fun test")

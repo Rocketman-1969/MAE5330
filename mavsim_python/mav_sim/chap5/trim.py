@@ -5,12 +5,8 @@ compute_trim
         12/29/2018 - RWB
         1/2022 - GND
 """
-from cmath import sqrt
-from sre_constants import IN
-from typing import Any, cast
 
 import numpy as np
-import numpy.typing as npt
 from mav_sim.chap3.mav_dynamics_euler import (
     IND_EULER,
     derivatives_euler,
@@ -120,10 +116,10 @@ def velocity_constraint(x: types.NP_MAT, Va_desired: float) -> float:
     Returns:
         Va^2 - Va_desired^2
     """
-    Va=x.item(3)**2+x.item(4)**2+x.item(5)**2
-    J=Va-Va_desired**2
+    Va=np.sqrt(x.item(3)**2+x.item(4)**2+x.item(5)**2)
+    J=Va**2-Va_desired**2
 
-    return J
+    return float(J)
 
 def velocity_constraint_partial(x: types.NP_MAT) -> list[float]:
     """Defines the partial of the velocity constraint with respect to x
@@ -197,19 +193,7 @@ def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_w
     state, delta = extract_state_input(x)
     # Calculate the desired trim trajectory dynamics
     if R==np.inf:
-       XDotStar=np.array(([0.],
-                       [0.],
-                       [-Va*np.sin(gamma)],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.],
-                       [0.]))
-
+        XDotStar=np.array(([0.],[0.],[-Va*np.sin(gamma)],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.]))
     else:
         XDotStar=np.array(([0.],
                         [0.],
@@ -235,4 +219,5 @@ def trim_objective_fun(x: types.NP_MAT, Va: float, gamma: float, R: float, psi_w
 
     # Calculate the square of the difference (neglecting pn and pe)
     J=np.transpose(Delta)@Q@Delta
-    return float(J)
+    J=float(J)
+    return J
