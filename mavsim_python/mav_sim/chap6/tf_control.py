@@ -7,7 +7,7 @@ tf_control
     Difference equation implementation of continous-time first-order transfer function
     using trapezoidal rule approximation. Used in yaw-damper implementation.
 
-    Transfer function form:  H(s) = u(s)/y(s) = k * (b1*s + b0)/(a1*s + a0)
+    Transfer function form:  H(s) = u(s)/y(s) = k * (b1*s + b0)/(a1*s + d0)
 """
 #pylint: disable=too-many-arguments
 from mav_sim.tools.wrap import saturate
@@ -59,7 +59,8 @@ class TFControl:
         """
 
         # saturate transfer function output at limit
-        u_sat = 0
+        u = -self.a1 * self.u_delay_1 + self.b0 * y + self.b1 * self.y_delay_1
+        u_sat = saturate(u, -self.limit, self.limit)
 
         # update the delayed variables
         self.y_delay_1 = y

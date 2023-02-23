@@ -25,6 +25,7 @@ class PDControlWithRate:
         self.kd = kd
         self.limit = limit
 
+
     def update(self, y_ref: float, y: float, ydot: float) -> float:
         """Calculates the proportional-derivative control. The output is saturated by self.limit
 
@@ -36,5 +37,8 @@ class PDControlWithRate:
         Output:
             u_sat: a saturated pd controller
         """
-        u_sat = 0.
+        u = self.kp*(y_ref-y)-self.kd*ydot
+
+        u_sat=saturate(u,-self.limit,self.limit)
+        
         return u_sat
