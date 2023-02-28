@@ -31,14 +31,14 @@ class Autopilot:
         """
 
         # instantiate lateral-directional controllers (note, these should be objects, not numbers)
-        self.roll_from_aileron = 0.
-        self.course_from_roll = 0.
-        self.yaw_damper = 0.
+        self.roll_from_aileron = PDControlWithRate(kp=AP.roll_kp,kd=AP.roll_kd,limit=np.radians(45))
+        self.course_from_roll = PIControl(kp=AP.course_kp,ki=AP.course_ki,limit=np.radians(30))
+        self.yaw_damper = TFControl(AP.yaw_damper_kr,n0=0,n1=1,d0=AP.yaw_damper_p_wo,d1=1,Ts=ts_control,limit=1)
 
         # instantiate longitudinal controllers (note, these should be objects, not numbers)
-        self.pitch_from_elevator = 0.
-        self.altitude_from_pitch = 0.
-        self.airspeed_from_throttle = 0.
+        self.pitch_from_elevator = PDControlWithRate(kp=AP.pitch_kp,kd=AP.pitch_kd,limit=np.radians(45))
+        self.altitude_from_pitch = PIControl(kp=AP.altitude_kp,ki=AP.altitude_kp,limit=np.radians(30))
+        self.airspeed_from_throttle = PIControl(kp=AP.airspeed_throttle_kp,ki=AP.airspeed_throttle_ki,limit=1)
         self.commanded_state = MsgState()
 
     def update(self, cmd: MsgAutopilot, state: MsgState) -> tuple[MsgDelta, MsgState]:
@@ -52,16 +52,17 @@ class Autopilot:
             delta: low-level flap commands
             commanded_state: the state being commanded
         """
-
         # lateral autopilot
-        phi_c = 0. # commanded value for phi
-        theta_c = 0. # commanded value for theta
-        delta_a = 0.
-        delta_r = 0.
+        phi_c = cmd.phi_feedforward+self.course_from_roll.update(y_ref=cmd.course_command,y=state.chi) # commanded value for phi
+        theta_c = self.altitude_from_pitch.update(y_ref=cmd.altitude_command,y=state.altitude) # commanded value for theta
+        theta_c = saturate(theta_c,-1*AP.altitude_zone, AP.altitude_zone)
+        delta_a = self.roll_from_aileron.update(y_ref=phi_c, y=state.phi, ydot=state.p)
+        delta_r = self.yaw_damper.update(y=state.psi)
+    
 
         # longitudinal autopilot
-        delta_e = 0.
-        delta_t = 0.
+        delta_e = self.pitch_from_elevator.update(y_ref=theta_c,y=state.theta,ydot=state.q)
+        delta_t = self.airspeed_from_throttle.update(y_ref=cmd.airspeed_command,y=state.Va)
         delta_t = saturate(delta_t, 0.0, 1.0)
 
         # construct control outputs and commanded states
