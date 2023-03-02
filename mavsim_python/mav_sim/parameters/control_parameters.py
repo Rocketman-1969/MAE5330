@@ -12,8 +12,8 @@ Vg: float = TF.Va_trim
 # get transfer function data for delta_a to phi
 wn_roll: float = 10.0 #20 #7
 zeta_roll: float = 0.707
-roll_kp: float = wn_roll**2/TF.a_phi2
-roll_kd: float = (2*zeta_roll*wn_roll-TF.a_phi1)/TF.a_phi2 # Implement
+roll_kp: float = (wn_roll**2)/TF.a_phi2
+roll_kd: float = (2*zeta_roll*wn_roll-TF.a_phi1)/(TF.a_phi2) # Implement
 
 #----------course loop------------- Section 6.1.1.2
 wn_course: float = wn_roll / 20.0
