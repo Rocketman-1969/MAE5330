@@ -32,12 +32,12 @@ class Autopilot:
 
         # instantiate lateral-directional controllers (note, these should be objects, not numbers)
         self.roll_from_aileron = PDControlWithRate(kp=AP.roll_kp,kd=AP.roll_kd,limit=np.radians(45))
-        self.course_from_roll = PIControl(kp=AP.course_kp,ki=AP.course_ki,limit=np.radians(30))
+        self.course_from_roll = PIControl(kp=AP.course_kp,ki=AP.course_ki,limit=np.radians(30),Ts=ts_control)
         self.yaw_damper = TFControl(AP.yaw_damper_kr,n0=0.0,n1=1.0,d0=AP.yaw_damper_p_wo,d1=1.0,Ts=ts_control,limit=1)
 
         # instantiate longitudinal controllers (note, these should be objects, not numbers)
         self.pitch_from_elevator = PDControlWithRate(kp=AP.pitch_kp,kd=AP.pitch_kd,limit=np.radians(45))
-        self.altitude_from_pitch = PIControl(kp=AP.altitude_kp,ki=AP.altitude_kp,limit=np.radians(30))
+        self.altitude_from_pitch = PIControl(kp=AP.altitude_kp,ki=AP.altitude_ki,limit=np.radians(30), Ts=ts_control)
         self.airspeed_from_throttle = PIControl(kp=AP.airspeed_throttle_kp,ki=AP.airspeed_throttle_ki,Ts=ts_control,limit=1)
         self.commanded_state = MsgState()
 
@@ -53,14 +53,14 @@ class Autopilot:
             commanded_state: the state being commanded
         """
         # lateral autopilot
-        
+
         phi_c = cmd.phi_feedforward + self.course_from_roll.update(y_ref=wrap(cmd.course_command,state.chi),y=state.chi) # commanded value for phi
         phi_c = saturate(phi_c,np.radians(-30),np.radians(30))
         altitude_command = saturate(cmd.altitude_command,state.altitude-AP.altitude_zone,state.altitude+AP.altitude_zone)
         theta_c = self.altitude_from_pitch.update(y_ref = altitude_command,y=state.altitude) # commanded value for theta
         delta_a = self.roll_from_aileron.update(y_ref=phi_c, y=state.phi, ydot=state.p)
         delta_r = self.yaw_damper.update(y=state.r)
-    
+
 
         # longitudinal autopilot
         delta_e = self.pitch_from_elevator.update(y_ref=theta_c,y=state.theta,ydot=state.q)
