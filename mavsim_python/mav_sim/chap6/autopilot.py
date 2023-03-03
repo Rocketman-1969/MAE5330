@@ -5,7 +5,7 @@ autopilot block for mavsim_python
         2/6/2019 - RWB
         12/21 - GND
 """
-from typing import Optional
+
 
 import mav_sim.parameters.control_parameters as AP
 import numpy as np
@@ -54,7 +54,8 @@ class Autopilot:
         """
         # lateral autopilot
 
-        phi_c = cmd.phi_feedforward + self.course_from_roll.update(y_ref=wrap(cmd.course_command,state.chi),y=state.chi) # commanded value for phi
+        phi_c = cmd.phi_feedforward + \
+            self.course_from_roll.update(y_ref=wrap(cmd.course_command,state.chi),y=state.chi) # commanded value for phi
         phi_c = saturate(phi_c,np.radians(-30),np.radians(30))
         altitude_command = saturate(cmd.altitude_command,state.altitude-AP.altitude_zone,state.altitude+AP.altitude_zone)
         theta_c = self.altitude_from_pitch.update(y_ref = altitude_command,y=state.altitude) # commanded value for theta
