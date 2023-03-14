@@ -49,8 +49,34 @@ def follow_straight_line(path: MsgPath, state: MsgState, k_path: float, chi_inf:
     Returns:
         autopilot_commands: the commands required for executing the desired line
     """
+    Pi= np.array([[state.north,state.east,-state.altitude]]).T
+    epi=Pi-path.line_origin
+    chi_q=np.arctan2(path.line_direction[1,0],path.line_direction[0,0])
+    chi_q=wrap(chi_q,chi_q-state.chi)
+    RotPI=np.array([[cos(chi_q),sin(chi_q),0],
+                    [-sin(chi_q), cos(chi_q),0],
+                    [0,0,1]])
+    ep=RotPI@epi
+    
+    #corse command
+    chi_c=chi_q-chi_inf*(2/np.pi)*np.arctan(k_path*ep[1,0])
+
+    n=np.array([[path.line_direction[1,0]],[-path.line_direction[0,0]],[0]])/(np.sqrt(path.line_direction[0,0]**2+path.line_direction[1,0]**2))
+    si=epi-(epi[0,0]*n[0,0]+epi[1,0]*n[1,0]+epi[2,0]*n[2,0])*n
+
+    #altitude command
+    h_c=-path.line_origin[2,0]-np.sqrt(si[0,0]**2+si[1,0]**2)*(path.line_direction[2,0]/(np.sqrt(path.line_direction[0,0]**2+path.line_direction[1,0]**2)))
+
+    #airspeed
+    Va_c=state.Va
+
     # Initialize the output
     autopilot_commands = MsgAutopilot()
+
+    autopilot_commands.airspeed_command=Va_c
+    autopilot_commands.altitude_command=h_c
+    autopilot_commands.course_command=chi_c
+    autopilot_commands.phi_feedforward=0
 
     # Create autopilot commands here
 
@@ -69,8 +95,26 @@ def follow_orbit(path: MsgPath, state: MsgState, k_orbit: float, gravity: float)
     Returns:
         autopilot_commands: the commands required for executing the desired orbit
     """
+    direction=0
+
+    if path.orbit_direction=="CCW":
+        direction=-1
+    else:
+        direction=1
+    d=np.sqrt((state.north-path.orbit_center[0,0])**2+(state.east-path.orbit_center[1,0])**2)
+    phi=np.arctan2((state.east-path.orbit_center[1,0]),(state.north-path.orbit_center[0,0]))
+    phi=wrap(phi,phi-state.chi)
+    chi_c=phi+direction*((np.pi/2)+np.arctan(k_orbit*((d-path.orbit_radius)/path.orbit_radius)))
+    h_c=-path.orbit_center[2,0]
+    if (d-path.orbit_radius)/path.orbit_radius<10:
+        phi_ff=direction*np.arctan2(state.Va**2,(gravity*path.orbit_radius))
+    else:
+        phi_ff=0
 
     # Initialize the output
     autopilot_commands = MsgAutopilot()
-
+    autopilot_commands.airspeed_command=state.Va
+    autopilot_commands.altitude_command=h_c
+    autopilot_commands.course_command=chi_c
+    autopilot_commands.phi_feedforward=phi_ff
     return autopilot_commands
