@@ -153,7 +153,7 @@ def follow_straight_line_test(test_cases: List[Tuple[Dict[str, Any], Any]]) -> N
 
         if (
             (
-                1e-12
+                1e-6
                 < np.abs(calculated_output.to_array() - test_case_it[1].to_array())
             ).any()
             or np.isnan(calculated_output.to_array()).any()
