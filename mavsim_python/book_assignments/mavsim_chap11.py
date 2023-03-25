@@ -18,14 +18,14 @@ def main() -> None:
     """Provide a test scenario for chapter 11
     """
     # Initialize the simulation parameters
-    sim_params = MsgSimParams(end_time=130., video_name="cha11.avi") # Sim ending in 10 seconds
+    sim_params = MsgSimParams(end_time=130.,write_video=True, video_name="cha11.avi") # Sim ending in 10 seconds
     state = DynamicState()
 
     # Waypoint definition
     waypoints = MsgWaypoints()
     #waypoints.type = 'straight_line'
-    #waypoints.type = 'fillet'
-    waypoints.type = 'dubins'
+    waypoints.type = 'fillet'
+    #waypoints.type = 'dubins'
     Va = PLAN.Va0
     waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
     waypoints.add(np.array([[1000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)

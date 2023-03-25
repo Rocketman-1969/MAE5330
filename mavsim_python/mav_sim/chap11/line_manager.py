@@ -2,6 +2,7 @@
    Chapter 11 Algorithm 7
 """
 
+from concurrent import futures
 from typing import cast
 
 import numpy as np
@@ -43,6 +44,18 @@ def line_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIndi
     ptr = ptr_prv
 
     # Create manager here
+    if waypoints.flag_waypoints_changed is True: # True when waypoints are new
+
+        waypoints.flag_waypoints_changed = False # Set to False to indicate that the waypoints have now been seen
+
+        ptr = WaypointIndices() # Resets the pointers
+    
+    (path,hs)=construct_line(waypoints=waypoints,ptr=ptr)
+    pos = np.array([[state.north],[state.east],[-state.altitude]])
+
+    if inHalfSpace(pos, hs) == True:
+        ptr.increment_pointers(waypoints.num_waypoints)
+
 
     # Output the updated path, halfspace, and index pointer
     return (path, hs, ptr)
@@ -69,8 +82,20 @@ def construct_line(waypoints: MsgWaypoints, ptr: WaypointIndices) \
 
     # Construct the path
     path = MsgPath()
+    path.airspeed= get_airspeed(waypoints, ptr)
+    path.line_origin=previous
+    path.line_direction=np.array(current-previous)/np.linalg.norm(current-previous)
     path.plot_updated = False
 
     # Construct the halfspace
     hs = HalfSpaceParams()
+    q_i=np.array(next_wp-current)/np.linalg.norm(next_wp-current)
+    q_imin1=path.line_direction
+    if np.linalg.norm(q_imin1+q_i)==0:
+        hs.normal=q_imin1
+    else:
+        hs.normal=np.array(q_i+q_imin1)/np.linalg.norm(q_i+q_imin1)
+    
+    hs.point=current
+    
     return (path, hs)

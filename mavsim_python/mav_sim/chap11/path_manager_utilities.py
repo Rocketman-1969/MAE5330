@@ -133,4 +133,13 @@ def inHalfSpace(pos: NP_MAT, hs: HalfSpaceParams) -> bool:
     Returns:
         True if pos is in the halfpace, False otherwise
     """
-    return False
+    actpos=np.array(pos-hs.point).T
+    dotPosNorm=actpos@hs.normal
+
+    if dotPosNorm>=0.0:
+        Half = True
+    
+    else:
+        Half = False
+    
+    return Half
